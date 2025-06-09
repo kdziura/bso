@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="https://gitlab-stud.elka.pw.edu.pl/kdziura/bso.git"
+REPO_URL="https://github.com/kdziura/bso.git"
 REPO_DIR="bso-main"
 ENV_FILE=".env"
 
