@@ -1,4 +1,9 @@
 # BSO
+Instalacja 1 komendą: curl -sSL https://raw.githubusercontent.com/kdziura/bso/main/install.sh | bash
+Jeśli nie zadziała należy doinstalować: 
+sudo apt update
+sudo apt install docker-compose-plugin
+
 docker exec -it bso_automation /opt/scripts/discover_hosts.sh
 docker exec -it bso_automation /opt/scripts/launch_scan.sh
 docker exec -it bso_automation /opt/scripts/report_completed_scans.sh
