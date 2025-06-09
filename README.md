@@ -1,6 +1,8 @@
 # BSO
-
-
+docker exec -it bso_automation /opt/scripts/discover_hosts.sh
+docker exec -it bso_automation /opt/scripts/launch_scan.sh
+docker exec -it bso_automation /opt/scripts/report_completed_scans.sh
+docker exec -it greenbone-community-edition-redis-server-1 redis-cli -s /run/redis/redis.sock RPUSH bso:completed_tasks "174c18ef-7e14-4b98-8997-c51eb0401179"
 
 ## Getting started
 
