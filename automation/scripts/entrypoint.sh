@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "[entrypoint] Updating GVMD feeds…"
-gvmd --update-feed
-
 echo "[entrypoint] Setting up cron jobs…"
 cat <<EOF > /etc/cron.d/bso-scan
 # co 24h o 02:00 – wykrywanie hostów
@@ -14,6 +11,9 @@ EOF
 
 chmod 0644 /etc/cron.d/bso-scan
 crontab /etc/cron.d/bso-scan
+
+mkdir -p /var/log
+touch /var/log/bso-cron.log
 
 echo "[entrypoint] Starting cron…"
 cron

@@ -212,6 +212,24 @@ services:
     depends_on:
       - gvmd
       - ospd-openvas
+  automation:
+    build:
+      context: ./automation
+    container_name: bso_automation
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    depends_on:
+      - redis-server       # wskazujemy na istniejący redis
+      - gvmd               # menedżer Greenbone
+      - ospd-openvas       # silnik OpenVAS
+    env_file: .env
+    volumes:
+      - ./automation/scripts:/opt/scripts:ro
+      - redis_socket_vol:/run/redis:ro
+      - gvmd_socket_vol:/run/gvmd:ro
+    restart: unless-stopped
 
 volumes:
   gpg_data_vol:
