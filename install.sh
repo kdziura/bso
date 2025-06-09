@@ -39,9 +39,18 @@ fi
 
 # 3. Build and start containers
 echo "Building images and starting Docker containers..."
-docker-compose pull --quiet
-docker-compose up -d --build
 
+if command -v docker-compose &> /dev/null; then
+  COMPOSE_CMD="docker-compose"
+elif docker compose version &> /dev/null; then
+  COMPOSE_CMD="docker compose"
+else
+  echo "Error: neither 'docker-compose' nor 'docker compose' available." >&2
+  exit 1
+fi
+
+$COMPOSE_CMD pull --quiet
+$COMPOSE_CMD up -d --build
 # 4. Summary
 echo
 echo "Installation complete"
