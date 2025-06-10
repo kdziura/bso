@@ -54,5 +54,7 @@ $COMPOSE_CMD up -d --build
 # 4. Summary
 echo
 echo "Installation complete"
-echo "  • Check containers: docker-compose ps"
+echo "Check containers: docker-compose ps"
+echo "Set up the admin password using this command: docker compose -f docker-compose.yml exec -u gvmd gvmd gvmd --user=admin --new-password=your_password"
+echo "Make sure you set the same password as in the .env file!"
 #echo "  • View logs: docker-compose logs -f"

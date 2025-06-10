@@ -22,21 +22,20 @@ from gvm.errors import GvmError
 class BSORReportGenerator:
     def __init__(self):
         self.gmp_username = os.environ.get("GMP_USERNAME", "admin")
-        self.gmp_password = os.environ.get("GMP_PASSWORD", "admin123")
+        self.gmp_password = os.environ.get("GMP_PASSWORD", "bso")
         
     def get_report_xml(self, task_id):
         conn = UnixSocketConnection(path="/run/gvmd/gvmd.sock")
         transform = EtreeCheckCommandTransform()
         
         with Gmp(connection=conn, transform=transform) as gmp:
-            # Dodaj timeout i ponowne próby
             try:
                 gmp.authenticate(self.gmp_username, self.gmp_password)
             except GvmError as e:
                 print(f"[auth] GMP Error: {e}")
                 raise
             
-            # Pobierz raporty dla zadania
+            # Get task reports
             reports = gmp.get_reports(
                 filter_string=f"task_id={task_id}",
                 details=True,
@@ -47,11 +46,11 @@ class BSORReportGenerator:
             if not report_list:
                 raise Exception(f"No reports found for task {task_id}")
             
-            # Pobierz pierwszy raport w formacie XML
+            # Get the newest report in XML
             report_id = report_list[0].get("id")
             report = gmp.get_report(
                 report_id=report_id,
-                report_format_id="a994b278-1f62-11e1-96ac-406186ea4fc5"  # XML format ID
+                report_format_id="a994b278-1f62-11e1-96ac-406186ea4fc5"
             )
             
             return report
@@ -60,27 +59,26 @@ class BSORReportGenerator:
         """Parsuj raport XML i wyciągnij kluczowe informacje"""
         results = []
         
-        # Jeśli xml_report to string, parsuj go
+        # Parse XML report
         if isinstance(xml_report, str):
             root = ElementTree.fromstring(xml_report)
         else:
             root = xml_report
         
-        # Podstawowe informacje o skanie
         scan_info = {
             'scan_time': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             'total_hosts': len(root.findall(".//host")),
             'total_results': len(root.findall(".//result"))
         }
         
-        # Wyniki vulnerabilities
+        # Vulnerabilities found
         for result in root.findall(".//result"):
             host = result.findtext("host", "Unknown")
             name = result.findtext("name", "Unknown vulnerability")
             severity = float(result.findtext("severity", "0"))
             description = result.findtext("description", "No description")
             
-            # Określ poziom zagrożenia
+            # Determine severity
             if severity >= 7.0:
                 threat_level = "High"
             elif severity >= 4.0:
@@ -98,7 +96,7 @@ class BSORReportGenerator:
                 'description': description
             })
         
-        # Sortuj według severity (najwyższej najpierw)
+        # Sort by severity
         results.sort(key=lambda x: x['severity'], reverse=True)
         
         return scan_info, results
@@ -112,7 +110,6 @@ class BSORReportGenerator:
         styles = getSampleStyleSheet()
         available_width = A4[0] - 80
 
-        # Stwórz specjalne style dla listy
         vuln_title_style = styles['Normal'].clone('VulnTitleStyle')
         vuln_title_style.fontSize = 10
         vuln_title_style.fontName = 'Helvetica-Bold'
@@ -130,12 +127,11 @@ class BSORReportGenerator:
         vuln_desc_style.spaceAfter = 12
         vuln_desc_style.textColor = colors.darkgrey
 
-        # Tytuł
         title = Paragraph("BSO Security Scan Report", styles['Title'])
         story.append(title)
         story.append(Spacer(1, 12))
         
-        # Informacje o skanie
+        # Scan info
         scan_summary = f"""
         <b>Scan Summary</b><br/>
         Scan Date: {scan_info['scan_time']}<br/>
@@ -145,7 +141,7 @@ class BSORReportGenerator:
         story.append(Paragraph(scan_summary, styles['Normal']))
         story.append(Spacer(1, 20))
         
-        # Statystyki zagrożeń
+        # Threat statistics
         threat_stats = {'High': 0, 'Medium': 0, 'Low': 0, 'Info': 0}
         for result in results:
             threat_stats[result['threat_level']] += 1
@@ -158,20 +154,18 @@ class BSORReportGenerator:
         story.append(Paragraph(stats_text, styles['Normal']))
         story.append(Spacer(1, 20))
         
-        # LISTA PODATNOŚCI - zamiast tabeli
+        # Vulnerability results list
         if results:
             story.append(Paragraph("<b>Detailed Vulnerability Results</b>", styles['Heading2']))
             story.append(Spacer(1, 12))
             
-            # Sortuj według threat_level (High -> Medium -> Low -> Info) i severity
+            # Sort by threat level
             threat_order = {'High': 4, 'Medium': 3, 'Low': 2, 'Info': 1}
             sorted_results = sorted(results, 
                                 key=lambda x: (threat_order[x['threat_level']], x['severity']), 
                                 reverse=True)
             
-            # Wyświetl wszystkie wyniki (nie ograniczaj do 15)
             for i, result in enumerate(sorted_results, 1):
-                # Określ kolor dla poziomu zagrożenia
                 if result['threat_level'] == 'High':
                     level_color = 'red'
                 elif result['threat_level'] == 'Medium':
@@ -181,13 +175,11 @@ class BSORReportGenerator:
                 else:
                     level_color = 'blue'
                 
-                # Tytuł podatności z numerem
                 vuln_title = f"""
                 <b>{i}. {result['name']}</b>
                 """
                 story.append(Paragraph(vuln_title, vuln_title_style))
                 
-                # Szczegóły podatności
                 details = f"""
                 <b>Host:</b> {result['host']} | 
                 <b>Severity:</b> {result['severity']:.1f} | 
@@ -195,22 +187,20 @@ class BSORReportGenerator:
                 """
                 story.append(Paragraph(details, vuln_detail_style))
                 
-                # Pełny opis (bez ucięcia)
                 description = f"""
                 <b>description:</b><br/>
                 {result['description']}
                 """
                 story.append(Paragraph(description, vuln_desc_style))
                 
-                # Dodaj linię oddzielającą (oprócz ostatniego elementu)
                 if i < len(sorted_results):
                     story.append(Spacer(1, 6))
-                    # Dodaj subtelną linię oddzielającą
+                    # Add horizontal line between vulnerabilities
                     from reportlab.platypus import HRFlowable
                     story.append(HRFlowable(width="100%", thickness=0.5, color=colors.lightgrey))
                     story.append(Spacer(1, 6))
         
-        # Generuj PDF
+        # Generate PDF
         doc.build(story)
         print(f"[report] PDF generated: {output_path}")
 
@@ -226,13 +216,13 @@ class BSORReportGenerator:
             print("[email] Missing email configuration, skipping email send")
             return
         
-        # Stwórz wiadomość
+        # Create email
         msg = MIMEMultipart()
         msg['From'] = smtp_user
         msg['To'] = report_email
         msg['Subject'] = f"BSO Security Scan Report - {datetime.now().strftime('%Y-%m-%d')}"
         
-        # Treść wiadomości
+        # Email body
         body = f"""
 BSO Automated Security Scan Report
 
@@ -247,7 +237,7 @@ BSO Security Scanner
         
         msg.attach(MIMEText(body, 'plain'))
         
-        # Załącz PDF
+        # Add PDF attachment
         with open(pdf_path, "rb") as attachment:
             pdf_part = MIMEApplication(attachment.read(), _subtype="pdf")
             pdf_part.add_header(
@@ -256,7 +246,7 @@ BSO Security Scanner
             )
             msg.attach(pdf_part)
         
-        # Wyślij email
+        # Send email
         try:
             with smtplib.SMTP(smtp_server, smtp_port) as server:
                 server.starttls()
@@ -275,20 +265,20 @@ def main():
     generator = BSORReportGenerator()
     
     try:
-        # 1. Pobierz raport XML z Greenbone
+        # 1. Get report XML
         print(f"[report] Fetching report for task: {task_id}")
         xml_report = generator.get_report_xml(task_id)
         
-        # 2. Parsuj XML
+        # 2. Parse XML
         print("[report] Parsing report data...")
         scan_info, results = generator.parse_xml_report(xml_report)
         
-        # 3. Generuj PDF
+        # 3. Generate PDF
         pdf_path = f"/tmp/BSO_Report_{task_id[:8]}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
         print("[report] Generating PDF report...")
         generator.generate_pdf(scan_info, results, pdf_path)
         
-        # 4. Wyślij mailem
+        # 4. Send email
         print("[report] Sending email...")
         generator.send_email(pdf_path, task_id)
         
