@@ -9,6 +9,7 @@ SCRIPTS_DIR="/opt/scripts"
 DISCOVER_SCRIPT="${SCRIPTS_DIR}/discover_hosts.sh"
 SCAN_SCRIPT="${SCRIPTS_DIR}/launch_scan.sh"
 REPORT_SCRIPT="${SCRIPTS_DIR}/report_completed_scans.sh"
+REDIS_CLI="redis-cli -s /run/redis/redis.sock"
 
 echo "=== STARTING SCANNING PROCESS ==="
 
