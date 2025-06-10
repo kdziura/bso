@@ -55,44 +55,6 @@ fi
 $COMPOSE_CMD pull --quiet
 $COMPOSE_CMD up -d --build
 
-# 4. Configure cron jobs
-echo "Configuring cron jobs..."
-
-# Get current working directory (full path)
-CURRENT_DIR=$(pwd)
-
-# Create backup of current crontab
-echo "Creating crontab backup..."
-crontab -l > crontab_backup.txt 2>/dev/null || echo "# No existing crontab" > crontab_backup.txt
-
-# Prepare new cron jobs
-# Update vulnerability feeds at 1 AM daily
-FEED_UPDATE_JOB="0 1 * * * cd $CURRENT_DIR && $COMPOSE_CMD pull vulnerability-tests notus-data scap-data cert-bund-data dfn-cert-data data-objects report-formats && $COMPOSE_CMD up -d vulnerability-tests notus-data scap-data cert-bund-data dfn-cert-data data-objects report-formats >> /var/log/greenbone-feeds.log 2>&1"
-# Run full scan at 3 AM daily
-SCAN_JOB="0 3 * * * cd $CURRENT_DIR && ./automation/scripts/run_full_scan.sh >> /var/log/greenbone-scan.log 2>&1"
-
-# Check if jobs already exist in crontab
-if crontab -l 2>/dev/null | grep -q "greenbone-feeds.log"; then
-  echo "Feed update cron job already exists, skipping..."
-else
-  echo "Adding feed update cron job..."
-  (crontab -l 2>/dev/null; echo "$FEED_UPDATE_JOB") | crontab -
-fi
-
-if crontab -l 2>/dev/null | grep -q "run_full_scan.sh"; then
-  echo "Scan cron job already exists, skipping..."
-else
-  echo "Adding scan cron job..."
-  (crontab -l 2>/dev/null; echo "$SCAN_JOB") | crontab -
-fi
-
-# Create log files with proper permissions
-echo "Creating log files..."
-sudo touch /var/log/greenbone-feeds.log /var/log/greenbone-scan.log 2>/dev/null || {
-  touch /tmp/greenbone-feeds.log /tmp/greenbone-scan.log
-  echo "Warning: Could not create logs in /var/log, using /tmp instead"
-}
-
 # 4. Summary
 echo
 echo "Installation complete"
