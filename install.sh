@@ -34,7 +34,7 @@ EOF
   echo
   echo "Fill in the .env file, then rerun the same command to finish installation."
   echo "You can use the following command to edit the file:"
-  echo "nano $ENV_FILE"
+  echo "nano bso-main/$ENV_FILE"
   exit 0
 else
   echo ".env exists, continuing."
@@ -56,7 +56,6 @@ $COMPOSE_CMD pull --quiet
 $COMPOSE_CMD up -d --build
 
 # 4. Configure cron jobs
-find $REPO_DIR/automation/scripts -name "*.sh" -exec chmod +x {} \;
 echo "Configuring cron jobs..."
 
 # Get current working directory (full path)
@@ -101,4 +100,5 @@ echo "Check containers: docker-compose ps"
 echo " "
 echo "Set up the admin password using this command: docker compose -f docker-compose.yml exec -u gvmd gvmd gvmd --user=admin --new-password=your_password"
 echo "Make sure you set the same password as in the .env file - otherwise the scanner won't work!"
+echo "Run this command before running the first scan: find $REPO_DIR/automation/scripts -name "*.sh" -exec chmod +x {} \;"
 #echo "  • View logs: docker-compose logs -f"
