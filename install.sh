@@ -32,7 +32,9 @@ GVMD_SCAN_CONFIG_ID=daba56c8-73ec-11df-a475-002264764cea
 TASK_NAME_PREFIX=BSO-AutoScan
 EOF
   echo
-  echo "Fill in .env now, then rerun the same command to finish installation."
+  echo "Fill in the .env file, then rerun the same command to finish installation."
+  echo "You can use the following command to edit the file:"
+  echo "nano $ENV_FILE"
   exit 0
 else
   echo ".env exists, continuing."
@@ -54,7 +56,7 @@ $COMPOSE_CMD pull --quiet
 $COMPOSE_CMD up -d --build
 
 # 4. Configure cron jobs
-chmod -R +x $REPO_DIR/automation/scripts
+find $REPO_DIR/automation/scripts -name "*.sh" -exec chmod +x {} \;
 echo "Configuring cron jobs..."
 
 # Get current working directory (full path)
